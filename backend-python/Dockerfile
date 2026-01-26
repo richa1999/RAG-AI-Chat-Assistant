@@ -1,5 +1,5 @@
-# Use Python 3.9 slim image
-FROM python:3.9-slim
+# Use Python 3.10 slim image for better compatibility
+FROM python:3.10-slim
 
 # Set working directory
 WORKDIR /app
@@ -13,27 +13,27 @@ ENV PYTHONUNBUFFERED=1 \
     VECLIB_MAXIMUM_THREADS=1 \
     NUMEXPR_NUM_THREADS=1
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install minimal system dependencies (add more only if needed)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
 
-# Install Python dependencies
+# Copy requirements and install Python dependencies
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+
+# Copy only the application code (avoid copying large data/model files for now)
 COPY app/ ./app/
-COPY data/ ./data/
+
 
 # Create vector_store directory if it doesn't exist
 RUN mkdir -p ./app/vector_store
+
 
 # Expose port
 EXPOSE 8000
 
 # Run the application
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
